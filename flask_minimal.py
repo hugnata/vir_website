@@ -2,8 +2,24 @@ from flask import Flask
 from flask import request
 import os
 import urllib.request, urllib.error, json
+import psycopg2
 
 app = Flask(__name__)
+
+app.logger.info("Connecting to postgres database")
+conn = psycopg2.connect(host="postgres",
+                        database="database",
+                        user="postgres",
+                        password="admin")
+
+cur = conn.cursor()
+
+# Create database if it does not exist
+cur.execute('CREATE TABLE stats (id serial PRIMARY KEY,'
+                                 'username varchar (150) NOT NULL,'
+                                 'nb_query integer  NOT NULL)'
+                                 )
+conn.commit()
 
 # Index page : just display a form asking for minecraft username
 @app.route("/")
@@ -39,28 +55,28 @@ def display_skin():
 
     avatar_url = f"https://mc-heads.net/avatar/{player_uuid}"
 
-    number_of_queries = update_query_names(username)
+    number_of_queries = update_query_count(username)
     return f"""<h2>Minecraft head of {username}</h2>
             <img src="{avatar_url}" alt="Minecraft head of {username}">
             <p>Number of queries for {username} head : {number_of_queries}</p>
             <a href="/"><input type="button" value="Back"/></a>
             """
 
-def update_query_names(username) -> int:
-    path = "queried_names.json"
+# Display statistics about the number of username queried
+@app.route("/admin_view")
+def admin_view():
+    cur.execute('SELECT * FROM stats;')
+    stats = cur.fetchall()
+    html_page = """<h2>Statistics for this website</h2>
+                    <p>Number of query for each username</p>
+                    <ul>
+                """
+    for stat in stats:
+        html_page += f"<li>{stat[0]} : {stat[1]} queries</li>"
+    html_page += "</ul>"
+    return html_page
 
-    # Try to retrieve previous stats
-    try:
-        with open(path, "r") as f:
-            stats = json.load(f)
-    except FileNotFoundError, json.JSONDecodeError:
-        stats = {}
-
-    # Update stats for user : username
-    stats[username] = stats.get(username, 0) + 1
-
-    # Save updated stats to "queried_names.json"
-    with open(path, "w") as f:
-        json.dump(stats, f)
-    
-    return stats[username]
+# Update the count of username
+def update_query_count(username) -> int:
+    cur.execute(f"""Update stats set nb_query = nb_query, 0 + 1 where username={username}""")
+    conn.commit()
