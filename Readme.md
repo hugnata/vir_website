@@ -19,6 +19,7 @@ The website save statistics about the queried heads inside a file name queried_n
 Requires python
 
 - Install Flask : `pip install flask`
-- Run the server : `flask --app flask_minimal.py run`
+- Set environment variable FLASK_APP : `export FLASK_APP=flask_minimal.py`
+- Run the server : `flask run`
 
 By default, the server is listening on port 5000
