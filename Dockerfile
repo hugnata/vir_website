@@ -3,7 +3,13 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
+RUN apt update
+
+RUN apt install gcc make -y
+
 COPY . .
+
+RUN make -C CustomDB
 
 RUN pip install -r requirements.txt
 

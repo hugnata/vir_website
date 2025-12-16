@@ -1,6 +1,6 @@
 from flask import Flask
 from flask import request
-import os
+import subprocess
 import urllib.request, urllib.error, json
 
 app = Flask(__name__)
@@ -47,20 +47,5 @@ def display_skin():
             """
 
 def update_query_names(username) -> int:
-    path = "queried_names.json"
-
-    # Try to retrieve previous stats
-    try:
-        with open(path, "r") as f:
-            stats = json.load(f)
-    except FileNotFoundError, json.JSONDecodeError:
-        stats = {}
-
-    # Update stats for user : username
-    stats[username] = stats.get(username, 0) + 1
-
-    # Save updated stats to "queried_names.json"
-    with open(path, "w") as f:
-        json.dump(stats, f)
-    
-    return stats[username]
+    process = subprocess.run(["./customDbExe", username])
+    return process.returncode
